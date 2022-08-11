@@ -1,0 +1,532 @@
+{
+    "Version": "2020-12-01",
+    "Metadata": {},
+    "Parameters": [
+        {
+            "Name": "InputData",
+            "Type": "String",
+            "DefaultValue": "s3://dlai-practical-data-science/data/raw/"
+        },
+        {
+            "Name": "ProcessingInstanceCount",
+            "Type": "Integer",
+            "DefaultValue": 1
+        },
+        {
+            "Name": "ProcessingInstanceType",
+            "Type": "String",
+            "DefaultValue": "ml.c5.2xlarge"
+        },
+        {
+            "Name": "MaxSeqLength",
+            "Type": "Integer",
+            "DefaultValue": 128
+        },
+        {
+            "Name": "BalanceDataset",
+            "Type": "String",
+            "DefaultValue": "True"
+        },
+        {
+            "Name": "TrainSplitPercentage",
+            "Type": "Float",
+            "DefaultValue": 0.9
+        },
+        {
+            "Name": "ValidationSplitPercentage",
+            "Type": "Float",
+            "DefaultValue": 0.05
+        },
+        {
+            "Name": "TestSplitPercentage",
+            "Type": "Float",
+            "DefaultValue": 0.05
+        },
+        {
+            "Name": "FeatureStoreOfflinePrefix",
+            "Type": "String",
+            "DefaultValue": "reviews-feature-store-1660251925"
+        },
+        {
+            "Name": "FeatureGroupName",
+            "Type": "String",
+            "DefaultValue": "reviews-feature-group-1660251925"
+        },
+        {
+            "Name": "Epochs",
+            "Type": "Integer",
+            "DefaultValue": 3
+        },
+        {
+            "Name": "LearningRate",
+            "Type": "Float",
+            "DefaultValue": 0.00001
+        },
+        {
+            "Name": "TrainBatchSize",
+            "Type": "Integer",
+            "DefaultValue": 64
+        },
+        {
+            "Name": "TrainStepsPerEpoch",
+            "Type": "Integer",
+            "DefaultValue": 50
+        },
+        {
+            "Name": "ValidationBatchSize",
+            "Type": "Integer",
+            "DefaultValue": 64
+        },
+        {
+            "Name": "ValidationStepsPerEpoch",
+            "Type": "Integer",
+            "DefaultValue": 50
+        },
+        {
+            "Name": "FreezeBertLayer",
+            "Type": "String",
+            "DefaultValue": "False"
+        },
+        {
+            "Name": "Seed",
+            "Type": "Integer",
+            "DefaultValue": 42
+        },
+        {
+            "Name": "TrainInstanceCount",
+            "Type": "Integer",
+            "DefaultValue": 1
+        },
+        {
+            "Name": "TrainInstanceType",
+            "Type": "String",
+            "DefaultValue": "ml.c5.9xlarge"
+        },
+        {
+            "Name": "TrainVolumeSize",
+            "Type": "Integer",
+            "DefaultValue": 256
+        },
+        {
+            "Name": "InputMode",
+            "Type": "String",
+            "DefaultValue": "File"
+        },
+        {
+            "Name": "RunValidation",
+            "Type": "String",
+            "DefaultValue": "True"
+        },
+        {
+            "Name": "MinAccuracyValue",
+            "Type": "Float",
+            "DefaultValue": 0.33
+        },
+        {
+            "Name": "ModelApprovalStatus",
+            "Type": "String",
+            "DefaultValue": "PendingManualApproval"
+        },
+        {
+            "Name": "DeployInstanceType",
+            "Type": "String",
+            "DefaultValue": "ml.m5.large"
+        },
+        {
+            "Name": "DeployInstanceCount",
+            "Type": "Integer",
+            "DefaultValue": 1
+        }
+    ],
+    "Steps": [
+        {
+            "Name": "Processing",
+            "Type": "Processing",
+            "Arguments": {
+                "ProcessingResources": {
+                    "ClusterConfig": {
+                        "InstanceType": {
+                            "Get": "Parameters.ProcessingInstanceType"
+                        },
+                        "InstanceCount": {
+                            "Get": "Parameters.ProcessingInstanceCount"
+                        },
+                        "VolumeSizeInGB": 30
+                    }
+                },
+                "AppSpecification": {
+                    "ImageUri": "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-scikit-learn:0.23-1-cpu-py3",
+                    "ContainerArguments": [
+                        "--train-split-percentage",
+                        "0.9",
+                        "--validation-split-percentage",
+                        "0.05",
+                        "--test-split-percentage",
+                        "0.05",
+                        "--balance-dataset",
+                        "True",
+                        "--max-seq-length",
+                        "128",
+                        "--feature-store-offline-prefix",
+                        "reviews-feature-store-1660251925",
+                        "--feature-group-name",
+                        "reviews-feature-group-1660251925"
+                    ],
+                    "ContainerEntrypoint": [
+                        "python3",
+                        "/opt/ml/processing/input/code/prepare_data.py"
+                    ]
+                },
+                "RoleArn": "arn:aws:iam::986094908616:role/sagemaker-studio-vpc-firewall-us-east-1-sagemaker-execution-role",
+                "ProcessingInputs": [
+                    {
+                        "InputName": "raw-input-data",
+                        "AppManaged": false,
+                        "S3Input": {
+                            "S3Uri": {
+                                "Get": "Parameters.InputData"
+                            },
+                            "LocalPath": "/opt/ml/processing/input/data/",
+                            "S3DataType": "S3Prefix",
+                            "S3InputMode": "File",
+                            "S3DataDistributionType": "ShardedByS3Key",
+                            "S3CompressionType": "None"
+                        }
+                    },
+                    {
+                        "InputName": "code",
+                        "AppManaged": false,
+                        "S3Input": {
+                            "S3Uri": "s3://sagemaker-us-east-1-986094908616/sagemaker-scikit-learn-2022-08-11-21-18-21-790/input/code/prepare_data.py",
+                            "LocalPath": "/opt/ml/processing/input/code",
+                            "S3DataType": "S3Prefix",
+                            "S3InputMode": "File",
+                            "S3DataDistributionType": "FullyReplicated",
+                            "S3CompressionType": "None"
+                        }
+                    }
+                ],
+                "ProcessingOutputConfig": {
+                    "Outputs": [
+                        {
+                            "OutputName": "sentiment-train",
+                            "AppManaged": false,
+                            "S3Output": {
+                                "S3Uri": "s3://sagemaker-us-east-1-986094908616/sagemaker-scikit-learn-2022-08-11-21-14-18-563/output/sentiment-train",
+                                "LocalPath": "/opt/ml/processing/output/sentiment/train",
+                                "S3UploadMode": "EndOfJob"
+                            }
+                        },
+                        {
+                            "OutputName": "sentiment-validation",
+                            "AppManaged": false,
+                            "S3Output": {
+                                "S3Uri": "s3://sagemaker-us-east-1-986094908616/sagemaker-scikit-learn-2022-08-11-21-14-18-563/output/sentiment-validation",
+                                "LocalPath": "/opt/ml/processing/output/sentiment/validation",
+                                "S3UploadMode": "EndOfJob"
+                            }
+                        },
+                        {
+                            "OutputName": "sentiment-test",
+                            "AppManaged": false,
+                            "S3Output": {
+                                "S3Uri": "s3://sagemaker-us-east-1-986094908616/sagemaker-scikit-learn-2022-08-11-21-14-18-563/output/sentiment-test",
+                                "LocalPath": "/opt/ml/processing/output/sentiment/test",
+                                "S3UploadMode": "EndOfJob"
+                            }
+                        }
+                    ]
+                },
+                "Environment": {
+                    "AWS_DEFAULT_REGION": "us-east-1"
+                }
+            }
+        },
+        {
+            "Name": "Train",
+            "Type": "Training",
+            "Arguments": {
+                "AlgorithmSpecification": {
+                    "TrainingInputMode": {
+                        "Get": "Parameters.InputMode"
+                    },
+                    "TrainingImage": "763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-training:1.6.0-cpu-py3",
+                    "MetricDefinitions": [
+                        {
+                            "Name": "validation:loss",
+                            "Regex": "val_loss: ([0-9.]+)"
+                        },
+                        {
+                            "Name": "validation:accuracy",
+                            "Regex": "val_acc: ([0-9.]+)"
+                        }
+                    ],
+                    "EnableSageMakerMetricsTimeSeries": true
+                },
+                "OutputDataConfig": {
+                    "S3OutputPath": "s3://sagemaker-us-east-1-986094908616/"
+                },
+                "StoppingCondition": {
+                    "MaxRuntimeInSeconds": 86400
+                },
+                "ResourceConfig": {
+                    "InstanceCount": {
+                        "Get": "Parameters.TrainInstanceCount"
+                    },
+                    "InstanceType": {
+                        "Get": "Parameters.TrainInstanceType"
+                    },
+                    "VolumeSizeInGB": {
+                        "Get": "Parameters.TrainVolumeSize"
+                    }
+                },
+                "RoleArn": "arn:aws:iam::986094908616:role/sagemaker-studio-vpc-firewall-us-east-1-sagemaker-execution-role",
+                "InputDataConfig": [
+                    {
+                        "DataSource": {
+                            "S3DataSource": {
+                                "S3DataType": "S3Prefix",
+                                "S3Uri": {
+                                    "Get": "Steps.Processing.ProcessingOutputConfig.Outputs['sentiment-train'].S3Output.S3Uri"
+                                },
+                                "S3DataDistributionType": "FullyReplicated"
+                            }
+                        },
+                        "ContentType": "text/csv",
+                        "ChannelName": "train"
+                    },
+                    {
+                        "DataSource": {
+                            "S3DataSource": {
+                                "S3DataType": "S3Prefix",
+                                "S3Uri": {
+                                    "Get": "Steps.Processing.ProcessingOutputConfig.Outputs['sentiment-validation'].S3Output.S3Uri"
+                                },
+                                "S3DataDistributionType": "FullyReplicated"
+                            }
+                        },
+                        "ContentType": "text/csv",
+                        "ChannelName": "validation"
+                    }
+                ],
+                "HyperParameters": {
+                    "max_seq_length": "128",
+                    "freeze_bert_layer": "\"False\"",
+                    "epochs": "3",
+                    "learning_rate": "1e-05",
+                    "train_batch_size": "64",
+                    "train_steps_per_epoch": "50",
+                    "validation_batch_size": "64",
+                    "validation_steps_per_epoch": "50",
+                    "seed": "42",
+                    "run_validation": "\"True\"",
+                    "sagemaker_submit_directory": "\"s3://sagemaker-us-east-1-986094908616/pytorch-training-2022-08-11-21-18-21-914/source/sourcedir.tar.gz\"",
+                    "sagemaker_program": "\"train.py\"",
+                    "sagemaker_container_log_level": "20",
+                    "sagemaker_job_name": "\"pytorch-training-2022-08-11-21-18-21-914\"",
+                    "sagemaker_region": "\"us-east-1\""
+                },
+                "DebugHookConfig": {
+                    "S3OutputPath": "s3://sagemaker-us-east-1-986094908616/",
+                    "CollectionConfigurations": []
+                },
+                "ProfilerRuleConfigurations": [
+                    {
+                        "RuleConfigurationName": "ProfilerReport-1660252701",
+                        "RuleEvaluatorImage": "503895931360.dkr.ecr.us-east-1.amazonaws.com/sagemaker-debugger-rules:latest",
+                        "RuleParameters": {
+                            "rule_to_invoke": "ProfilerReport"
+                        }
+                    }
+                ],
+                "ProfilerConfig": {
+                    "S3OutputPath": "s3://sagemaker-us-east-1-986094908616/"
+                }
+            },
+            "CacheConfig": {
+                "Enabled": true,
+                "ExpireAfter": "PT1H"
+            }
+        },
+        {
+            "Name": "EvaluateModel",
+            "Type": "Processing",
+            "Arguments": {
+                "ProcessingResources": {
+                    "ClusterConfig": {
+                        "InstanceType": {
+                            "Get": "Parameters.ProcessingInstanceType"
+                        },
+                        "InstanceCount": {
+                            "Get": "Parameters.ProcessingInstanceCount"
+                        },
+                        "VolumeSizeInGB": 30
+                    }
+                },
+                "AppSpecification": {
+                    "ImageUri": "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-scikit-learn:0.23-1-cpu-py3",
+                    "ContainerArguments": [
+                        "--max-seq-length",
+                        "128"
+                    ],
+                    "ContainerEntrypoint": [
+                        "python3",
+                        "/opt/ml/processing/input/code/evaluate_model_metrics.py"
+                    ]
+                },
+                "RoleArn": "arn:aws:iam::986094908616:role/sagemaker-studio-vpc-firewall-us-east-1-sagemaker-execution-role",
+                "ProcessingInputs": [
+                    {
+                        "InputName": "input-1",
+                        "AppManaged": false,
+                        "S3Input": {
+                            "S3Uri": {
+                                "Get": "Steps.Train.ModelArtifacts.S3ModelArtifacts"
+                            },
+                            "LocalPath": "/opt/ml/processing/input/model",
+                            "S3DataType": "S3Prefix",
+                            "S3InputMode": "File",
+                            "S3DataDistributionType": "FullyReplicated",
+                            "S3CompressionType": "None"
+                        }
+                    },
+                    {
+                        "InputName": "input-2",
+                        "AppManaged": false,
+                        "S3Input": {
+                            "S3Uri": {
+                                "Get": "Steps.Processing.ProcessingOutputConfig.Outputs['sentiment-test'].S3Output.S3Uri"
+                            },
+                            "LocalPath": "/opt/ml/processing/input/data",
+                            "S3DataType": "S3Prefix",
+                            "S3InputMode": "File",
+                            "S3DataDistributionType": "FullyReplicated",
+                            "S3CompressionType": "None"
+                        }
+                    },
+                    {
+                        "InputName": "code",
+                        "AppManaged": false,
+                        "S3Input": {
+                            "S3Uri": "s3://sagemaker-us-east-1-986094908616/sagemaker-scikit-learn-2022-08-11-21-18-22-049/input/code/evaluate_model_metrics.py",
+                            "LocalPath": "/opt/ml/processing/input/code",
+                            "S3DataType": "S3Prefix",
+                            "S3InputMode": "File",
+                            "S3DataDistributionType": "FullyReplicated",
+                            "S3CompressionType": "None"
+                        }
+                    }
+                ],
+                "ProcessingOutputConfig": {
+                    "Outputs": [
+                        {
+                            "OutputName": "metrics",
+                            "AppManaged": false,
+                            "S3Output": {
+                                "S3Uri": "s3://sagemaker-us-east-1-986094908616/sagemaker-scikit-learn-2022-08-11-21-15-54-354/output/metrics",
+                                "LocalPath": "/opt/ml/processing/output/metrics/",
+                                "S3UploadMode": "EndOfJob"
+                            }
+                        }
+                    ]
+                },
+                "Environment": {
+                    "AWS_DEFAULT_REGION": "us-east-1"
+                },
+                "StoppingCondition": {
+                    "MaxRuntimeInSeconds": 7200
+                }
+            },
+            "PropertyFiles": [
+                {
+                    "PropertyFileName": "EvaluationReport",
+                    "OutputName": "metrics",
+                    "FilePath": "evaluation.json"
+                }
+            ]
+        },
+        {
+            "Name": "AccuracyCondition",
+            "Type": "Condition",
+            "Arguments": {
+                "Conditions": [
+                    {
+                        "Type": "GreaterThanOrEqualTo",
+                        "LeftValue": {
+                            "Std:JsonGet": {
+                                "PropertyFile": {
+                                    "Get": "Steps.EvaluateModel.PropertyFiles.EvaluationReport"
+                                },
+                                "Path": "metrics.accuracy.value"
+                            }
+                        },
+                        "RightValue": {
+                            "Get": "Parameters.MinAccuracyValue"
+                        }
+                    }
+                ],
+                "IfSteps": [
+                    {
+                        "Name": "RegisterModel",
+                        "Type": "RegisterModel",
+                        "Arguments": {
+                            "ModelPackageGroupName": "BERT-Reviews-1660251925",
+                            "ModelMetrics": {
+                                "ModelQuality": {
+                                    "Statistics": {
+                                        "ContentType": "application/json",
+                                        "S3Uri": "s3://sagemaker-us-east-1-986094908616/sagemaker-scikit-learn-2022-08-11-21-15-54-354/output/metrics/evaluation.json"
+                                    }
+                                }
+                            },
+                            "InferenceSpecification": {
+                                "Containers": [
+                                    {
+                                        "Image": "763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-inference:1.6.0-cpu-py36",
+                                        "ModelDataUrl": {
+                                            "Get": "Steps.Train.ModelArtifacts.S3ModelArtifacts"
+                                        }
+                                    }
+                                ],
+                                "SupportedContentTypes": [
+                                    "application/jsonlines"
+                                ],
+                                "SupportedResponseMIMETypes": [
+                                    "application/jsonlines"
+                                ],
+                                "SupportedRealtimeInferenceInstanceTypes": [
+                                    {
+                                        "Get": "Parameters.DeployInstanceType"
+                                    }
+                                ],
+                                "SupportedTransformInstanceTypes": [
+                                    {
+                                        "Get": "Parameters.DeployInstanceType"
+                                    }
+                                ]
+                            },
+                            "ModelApprovalStatus": {
+                                "Get": "Parameters.ModelApprovalStatus"
+                            }
+                        }
+                    },
+                    {
+                        "Name": "CreateModel",
+                        "Type": "Model",
+                        "Arguments": {
+                            "ExecutionRoleArn": "arn:aws:iam::986094908616:role/sagemaker-studio-vpc-firewall-us-east-1-sagemaker-execution-role",
+                            "PrimaryContainer": {
+                                "Image": "763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-inference:1.6.0-cpu-py36",
+                                "Environment": {},
+                                "ModelDataUrl": {
+                                    "Get": "Steps.Train.ModelArtifacts.S3ModelArtifacts"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "ElseSteps": []
+            }
+        }
+    ]
+}
